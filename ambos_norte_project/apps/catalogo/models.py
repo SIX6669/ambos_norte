@@ -34,6 +34,22 @@ class Producto(models.Model):
     destacado = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
+    
+    def tiene_stock(self, cantidad=1):
+        """Verifica si hay stock suficiente"""
+        return self.stock >= cantidad
+    
+    def reducir_stock(self, cantidad):
+        """Reduce el stock de forma segura"""
+        if not self.tiene_stock(cantidad):
+            raise ValidationError(f"Stock insuficiente. Disponible: {self.stock}")
+        self.stock -= cantidad
+        self.save()
+    
+    def aumentar_stock(self, cantidad):
+        """Aumenta el stock"""
+        self.stock += cantidad
+        self.save()
 
     class Meta:
         db_table = 'productos'
@@ -44,10 +60,12 @@ class Producto(models.Model):
     def __str__(self):
         return self.nombre
     
+    
     @property
     def stock_disponible(self):
         """Verifica si hay stock disponible"""
         return self.stock > 0
+    
 
 class ImagenProducto(models.Model):
     
