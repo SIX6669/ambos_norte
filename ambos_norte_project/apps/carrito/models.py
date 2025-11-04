@@ -53,6 +53,14 @@ class ItemCarrito(models.Model):
     cantidad = models.IntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_agregado = models.DateTimeField(auto_now_add=True)
+    def save(self, *args, **kwargs):
+        # Validar stock antes de guardar
+        if not self.producto.tiene_stock(self.cantidad):
+            raise ValidationError(
+                f"Stock insuficiente para {self.producto.nombre}. "
+                f"Disponible: {self.producto.stock}"
+            )
+        super().save(*args, **kwargs)
     
     class Meta:
         db_table = 'items_carrito'
