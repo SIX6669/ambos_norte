@@ -7,7 +7,7 @@ class ChatbotConversacionSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only = ('fecha_inicio','fecha_fin','session_id',)
 
-class ChatbotMensaje(serializers.ModelSerializer):
+class ChatbotMensajeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChatbotMensaje
         fields = '__all__'
