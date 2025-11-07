@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from catalogo.models import Producto
+from django.core.exceptions import ValidationError
+
 # Create your models here.
 class ChatbotConversacion(models.Model):
     """
