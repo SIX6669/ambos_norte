@@ -1,34 +1,35 @@
+import { Link, useLocation } from "react-router-dom";
+
 export default function Navbar() {
+  const location = useLocation();
+  const isRegistro = location.pathname.startsWith("/registro");
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full bg-slate-300 backdrop-blur-md">
-      <div className="mx-4 sm:mx-8 md:mx-12 px-2 sm:px-3 md:px-6">
-        <div className="flex h-12 sm:h-18 md:h-24 items-center justify-between">
-          <a href="/" className="inline-flex items-center rounded-full bg-white px-3 sm:px-4 py-1 text-sm sm:text-base md:text-lg">
-            <span>Ambos Norte</span>
-          </a>
-          {/* Menú Desktop */}
-          <ul className="hidden md:flex items-center gap-4 sm:gap-6 md:gap-8 text-sm sm:text-base md:text-lg">
+    <nav className="fixed top-0 left-0 z-50 w-full bg-[#F0F6F6]">
+      <div className="mx-4 md:mx-12 px-2 sm:px-4 md:px-6">
+        <div className="flex h-12 md:h-16 items-center justify-between">
+          <Link to="/" className="text-[#3D5A80] text-sm md:text-lg font-bold">
+            <span>AMBOS NORTE</span>
+          </Link>
+          <ul className="text-[#293241] hidden md:flex items-center gap-4 md:gap-8 text-sm md:text-base">
             <li>
-              <a href="#productos">Home</a>
+              <Link to="/">Home</Link>
             </li>
             <li>
-              <a href="#productos">Productos</a>
+              <Link to="/productos">Productos</Link>
             </li>
             <li>
-              <a href="#buscar">Buscar</a>
+              <Link to="/buscar">Buscar</Link>
             </li>
             <li>
-              <a href="#contacto">Contacto</a>
+              <Link to="/contacto">Contacto</Link>
             </li>
+            {!isRegistro && (
+              <Link to="/registro" className="hidden md:inline-flex items-center rounded bg-[#293241] px-4 py-2 text-sm md:text-base text-white">
+                Iniciar sesión
+              </Link>
+            )}
           </ul>
-          {/* Botón Desktop */}
-          <a href="#registro" className="hidden md:inline-flex items-center rounded-full bg-black px-3 sm:px-4 py-1 sm:py-1.5 text-sm sm:text-base md:text-lg text-white">
-            Iniciar sesión
-          </a>
-          {/* Menú Móvil */}
-          <button className="md:hidden text-black text-lg">
-            ☰
-          </button>
+          <button className="md:hidden text-black text-lg">☰</button>
         </div>
       </div>
     </nav>
