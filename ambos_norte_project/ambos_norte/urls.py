@@ -21,13 +21,13 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('/api', include('carrito.urls')),
-    path('/api', include('catalogo.urls')),
-    path('/api', include('chatbot.urls')),
-    path('/api', include('envios.urls')),
-    path('/api', include('pagos.urls')),
-    path('/api', include('pedidos.urls')),
-    path('/api', include('usuarios'))
+    path('api', include('carrito.urls')),
+    path('api', include('catalogo.urls')),
+    path('api', include('chatbot.urls')),
+    path('api', include('envios.urls')),
+    path('api', include('pagos.urls')),
+    path('api', include('pedidos.urls')),
+    path('api', include('usuarios'))
 ]
 
 # Servir archivos media en desarrollo

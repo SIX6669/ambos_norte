@@ -4,7 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Carrito, ItemCarrito
-from ..catalogo.models import Producto
+from catalogo.models import Producto
 from .serializer import CarritoSerializer,ItemCarritoSerializer
 
 class CarritoViewSet(viewsets.ModelViewSet):
@@ -14,7 +14,7 @@ class CarritoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user)
     
-    @action(default =True, methods=['post'])
+    @action(detail=True, methods=['post'])
     def agregar_item(self,request, pk=None):
         carrito = self.get_object()
         producto_id = request.data.get('producto_id')

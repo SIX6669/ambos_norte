@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Carrito, ItemCarrito
-from ..catalogo.serilizer import ProductoSerializer
+from catalogo.serilizer import ProductoSerializer
 
 class ItemCarritoSerializer(serializers.ModelSerializer):
     

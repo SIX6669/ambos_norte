@@ -9,7 +9,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
 
 class ItemPedidoSetView(viewsets.ModelViewSet):
     queryset = ItemPedido.objects.all()
-    serializer_class = ItemPedido
+    serializer_class = ItemPedidoSerializer
 
 class HistorialEstadoPedidoViewSet(viewsets.ModelViewSet):
     queryset = HistorialEstadoPedido.objects.all()
