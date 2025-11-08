@@ -15,6 +15,6 @@ router.register(r'metricas-productos', MetricaProductoViewSet, basename='metrica
 router.register(r'metricas-diarias', MetricaDiariaViewSet, basename='metrica_diaria')
 router.register(r'config-google', ConfiguracionGoogleAnalyticsViewSet, basename='config_google')
 router.register(r'datos-google', DatosGoogleAnalyticsViewSet, basename='datos_google')
-router.register(r'reportes', ReportesViewSet, basename='reportes')
+router.register(r'reportes', ReportesViewSet, basename='reportes') #reportes no anda
 
 urlpatterns = router.urls

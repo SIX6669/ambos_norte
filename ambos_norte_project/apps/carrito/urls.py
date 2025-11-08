@@ -3,7 +3,7 @@ from .views import CarritoViewSet, ItemCarritoViewSet
 
 router = DefaultRouter()
 router.register(r'carrito', CarritoViewSet, basename='carrito')
-router.register(r'item-carrito', ItemCarritoViewSet, basename='item_carrito')
+router.register(r'item-carrito', ItemCarritoViewSet, basename='item_carrito')#NO ANDA
 
 
 urlpatterns = router.urls
