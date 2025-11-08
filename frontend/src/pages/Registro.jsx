@@ -5,14 +5,14 @@ export default function Registro() {
   const onSubmit = (e) => e.preventDefault();
 
   return (
-    <div className="h-full flex flex-col md:flex-row">
+    <div className="bg-[#F0F6F6] h-full min-h-[calc(100vh-6rem)] md:min-h-[calc(100vh-8rem)] flex flex-col md:flex-row">
       <div className="md:w-1/2 flex flex-col justify-center items-center bg-[#2F4858] text-white text-center py-12">
         <div>
           <h1 className="text-2xl md:text-3xl">Bienvenido/a a</h1>
           <h1 className="text-4xl md:text-5xl font-semibold">Ambos Norte</h1>
         </div>
       </div>
-      <div className="md:w-1/2 flex justify-center items-center bg-white py-10">
+      <div className="md:w-1/2 flex justify-center items-center py-10">
         <div className="w-full max-w-xl px-12">
           {mode === "login" ? (
             <>
