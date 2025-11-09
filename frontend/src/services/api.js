@@ -14,7 +14,7 @@ const api = axios.create({
 // Interceptor para agregar token de autenticación
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');  // ⬅️ Cambio: era 'token', ahora 'authToken'
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -31,7 +31,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expirado o inválido
-      localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
       window.location.href = '/registro';
     }
     return Promise.reject(error);
@@ -39,5 +41,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
-
