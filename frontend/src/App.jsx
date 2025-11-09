@@ -18,7 +18,7 @@ import Perfil from "./pages/Perfil.jsx";
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
 import AdminDashboard from "./pages/admin/Admin.jsx";
 import AdminVentas from "./pages/admin/AdminVentas.jsx";
-import AdminInventario from "./pages/admin/AdminInventario.jsx";
+import AdminInventario from "./pages/Admin/AdminInventario.jsx";
 
 function Layout() {
   const location = useLocation();

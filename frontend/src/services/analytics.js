@@ -33,6 +33,14 @@ const analyticsService = {
     return response.data;
   },
 
+  // Alias para compatibilidad con Admin.jsx
+  getTopProductos: async (criterio = 'ventas', limite = 5) => {
+    const response = await api.get('/analytics/metricas-productos/top_productos/', {
+      params: { criterio, limite }
+    });
+    return response.data;
+  },
+
   // ==================== MÉTRICAS DIARIAS ====================
   
   // Obtener métricas diarias
@@ -45,8 +53,21 @@ const analyticsService = {
     return response.data;
   },
 
+  // Alias para compatibilidad con Admin.jsx
+  getMetricasDiarias: async (filters = {}) => {
+    const params = new URLSearchParams(filters);
+    const response = await api.get(`/analytics/metricas-diarias/?${params}`);
+    return response.data;
+  },
+
   // Resumen de métricas (hoy vs ayer)
   getMetricsSummary: async () => {
+    const response = await api.get('/analytics/metricas-diarias/resumen/');
+    return response.data;
+  },
+
+  // Alias para compatibilidad con Admin.jsx
+  getResumenMetricas: async () => {
     const response = await api.get('/analytics/metricas-diarias/resumen/');
     return response.data;
   },

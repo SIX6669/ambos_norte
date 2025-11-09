@@ -1,8 +1,24 @@
-
+import { getChangeColor, getChangeIcon } from '../../utils/helpers';
 
 export default function KPICard({ title, value, change, icon, color }) {
+  // Determinar si el cambio es positivo o negativo
+  const isPositive = change > 0;
+  const changeColor = isPositive ? 'text-green-200' : 'text-red-200';
+  
+  // Mapeo de colores para los gradientes
+  const colorClasses = {
+    indigo: 'from-indigo-500 to-indigo-600',
+    green: 'from-green-500 to-green-600',
+    yellow: 'from-yellow-500 to-yellow-600',
+    purple: 'from-purple-500 to-purple-600',
+    red: 'from-red-500 to-red-600',
+    blue: 'from-blue-500 to-blue-600',
+  };
+  
+  const gradientClass = colorClasses[color] || colorClasses.indigo;
+
   return (
-    <div className={`bg-gradient-to-br ${color} overflow-hidden shadow-lg rounded-lg fade-in hover:shadow-xl transition-shadow`}>
+    <div className={`bg-gradient-to-br ${gradientClass} overflow-hidden shadow-lg rounded-lg hover:shadow-xl transition-shadow`}>
       <div className="p-5">
         <div className="flex items-center">
           <div className="flex-shrink-0">
@@ -19,10 +35,10 @@ export default function KPICard({ title, value, change, icon, color }) {
                 <div className="text-2xl font-semibold text-white">
                   {value}
                 </div>
-                {change !== undefined && (
-                  <div className={`ml-2 flex items-baseline text-sm font-semibold ${change.positivo ? 'text-green-200' : 'text-red-200'}`}>
-                    <span>{getChangeIcon(change.valor)}</span>
-                    <span className="ml-1">{Math.abs(change.valor).toFixed(1)}%</span>
+                {change !== undefined && change !== null && (
+                  <div className={`ml-2 flex items-baseline text-sm font-semibold ${changeColor}`}>
+                    <span>{getChangeIcon(change)}</span>
+                    <span className="ml-1">{Math.abs(change).toFixed(1)}%</span>
                   </div>
                 )}
               </dd>
