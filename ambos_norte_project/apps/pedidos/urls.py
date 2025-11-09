@@ -1,4 +1,6 @@
 from django.urls import path
+from .views import PedidoListCreateView
 
-urlpatterns = []
-
+urlpatterns = [
+    path('', PedidoListCreateView.as_view(), name='pedido-list-create'),
+]

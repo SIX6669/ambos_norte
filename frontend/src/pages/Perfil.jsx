@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { User, Lock, Package } from "lucide-react";
 
 export default function Perfil() {
+  const location = useLocation();
   const [usuario, setUsuario] = useState(null);
   const [seccion, setSeccion] = useState("datos");
   const [pedidos, setPedidos] = useState([]);
@@ -10,6 +12,16 @@ export default function Perfil() {
 
   const rawToken = localStorage.getItem("token");
   const token = rawToken && rawToken !== "undefined" && rawToken !== "null" ? rawToken : null;
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const tab = params.get("tab");
+      if (tab === "pedidos" || tab === "seguridad" || tab === "datos") {
+        setSeccion(tab);
+      }
+    } catch { }
+  }, [location.search]);
 
   useEffect(() => {
     if (!token) {
@@ -40,7 +52,33 @@ export default function Perfil() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
-      .then((data) => setPedidos(data))
+      .then((data) => {
+        const serverOrders = Array.isArray(data) ? data : [];
+        let localOrders = [];
+        try {
+          const rawList = localStorage.getItem("orders_local");
+          if (rawList) {
+            const arr = JSON.parse(rawList);
+            if (Array.isArray(arr)) localOrders = arr;
+          } else {
+            const rawLast = localStorage.getItem("last_order");
+            if (rawLast) {
+              const o = JSON.parse(rawLast);
+              if (o) localOrders = [o];
+            }
+          }
+        } catch { }
+
+        const normalizedLocal = localOrders.map((o) => ({
+          ...o,
+          fecha_creacion: o.fecha || o.fecha_creacion || o.created_at || null,
+        }));
+
+        const byId = new Map();
+        for (const so of serverOrders) byId.set(String(so.id), so);
+        for (const lo of normalizedLocal) if (!byId.has(String(lo.id))) byId.set(String(lo.id), lo);
+        setPedidos(Array.from(byId.values()));
+      })
       .catch(() => console.error("Error cargando pedidos"));
   }, []);
 
@@ -117,6 +155,11 @@ export default function Perfil() {
         Cargando perfil...
       </p>
     );
+
+  const fechaMostrar = (o) => {
+    const f = o?.fecha_pedido || o?.fecha_creacion || o?.fecha || o?.created_at;
+    try { return f ? new Date(f).toLocaleDateString() : "-"; } catch { return "-"; }
+  };
 
   return (
     <div className="h-full min-h-[calc(100vh-6rem)] md:min-h-[calc(100vh-8rem)] bg-[#F0F6F6] flex flex-col md:flex-row py-10 px-8 md:px-16 md:items-center md:justify-center">
@@ -302,7 +345,7 @@ export default function Perfil() {
                     pedidos.map((p) => (
                       <tr key={p.id} className="border-t">
                         <td className="px-6 py-4">#{p.id}</td>
-                        <td className="px-6 py-4">{p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString() : "-"}</td>
+                        <td className="px-6 py-4">{fechaMostrar(p)}</td>
                         <td className="px-6 py-4"><span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs">{p.estado || "En proceso"}</span></td>
                         <td className="px-6 py-4">${p.total ?? p.total_pagado ?? 0}</td>
                       </tr>

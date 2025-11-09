@@ -70,7 +70,7 @@ export default function EnvioPago() {
   const validar = () => {
     if (!form.nombre || !form.apellido || !form.telefono) return false;
     if (metodoEnvio === "envio") {
-      if (!form.direccion || !form.ciudad || !form.cp) return false;
+      if (!form.direccion || !form.ciudad) return false;
     }
     return true;
   };
@@ -81,6 +81,9 @@ export default function EnvioPago() {
       return;
     }
     try {
+      const rawToken = localStorage.getItem("token");
+      const token = rawToken && rawToken !== "undefined" && rawToken !== "null" ? rawToken : null;
+      const metodoPago = "efectivo";
       const pedido = {
         id: Date.now(),
         fecha: new Date().toISOString(),
@@ -96,7 +99,58 @@ export default function EnvioPago() {
         },
         total: totalConEnvio,
       };
-      localStorage.setItem("last_order", JSON.stringify(pedido));
+      let storedOrder = pedido;
+      try {
+        const payload = {
+          items: (items || []).map((it) => ({
+            producto_id: it.id,
+            cantidad: it.cantidad || 1,
+            precio_unitario: it.precio || 0,
+          })),
+          envio: {
+            metodo: metodoEnvio,
+            costo: costoEnvio,
+            direccion: form.direccion || null,
+            ciudad: form.ciudad || null,
+          },
+          contacto: {
+            nombre: form.nombre,
+            apellido: form.apellido,
+            telefono: form.telefono,
+            email: form.email,
+          },
+          notas: form.notas || "",
+          total: totalConEnvio,
+        };
+        if (!token) {
+          alert("Inicia sesion para finalizar la compra");
+          return;
+        }
+        const res = await fetch("http://127.0.0.1:8000/api/pedidos/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          const created = await res.json();
+          storedOrder = created || storedOrder;
+        } else {
+          let msg = "No se pudo registrar el pedido";
+          try { const err = await res.json(); msg = err.detail || JSON.stringify(err); } catch {}
+          alert(msg);
+          return;
+        }
+      } catch {}
+      localStorage.setItem("last_order", JSON.stringify(storedOrder));
+      try {
+        const rawList = localStorage.getItem("orders_local");
+        const list = rawList ? JSON.parse(rawList) : [];
+        const next = [storedOrder, ...Array.isArray(list) ? list : []];
+        localStorage.setItem("orders_local", JSON.stringify(next));
+      } catch {}
       localStorage.removeItem("cart");
       navigate("/compra-exitosa");
     } catch {
