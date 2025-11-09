@@ -90,3 +90,9 @@ class ProductoDetailSerializer(serializers.ModelSerializer):
             pass
         return None
 
+
+class ProductoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Producto
+        fields = "__all__"
+

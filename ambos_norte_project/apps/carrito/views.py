@@ -4,7 +4,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Carrito, ItemCarrito
-from catalogo.models import Producto
+from apps.catalogo.models import Producto
 from .serializer import CarritoSerializer,ItemCarritoSerializer
 
 class CarritoViewSet(viewsets.ModelViewSet):

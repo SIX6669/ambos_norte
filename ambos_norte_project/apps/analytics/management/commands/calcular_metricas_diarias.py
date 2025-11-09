@@ -2,11 +2,11 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg, F
 from datetime import date, timedelta
-from analytics.models import MetricaDiaria, EventoUsuario
-from pedidos.models import Pedido
-from carrito.models import Carrito
-from usuarios.models import Usuario
-from catalogo.models import Producto
+from apps.analytics.models import MetricaDiaria, EventoUsuario
+from apps.pedidos.models import Pedido
+from apps.carrito.models import Carrito
+from apps.usuarios.models import Usuario
+from apps.catalogo.models import Producto
 
 
 class Command(BaseCommand):
@@ -143,7 +143,7 @@ class Command(BaseCommand):
         
         # ==================== PRODUCTOS ====================
         # Total de productos vendidos (unidades)
-        from pedidos.models import ItemPedido
+from apps.pedidos.models import ItemPedido
         
         items_vendidos = ItemPedido.objects.filter(
             pedido__in=pedidos_del_dia,

@@ -1,8 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-from catalogo.models import Producto, Categoria
-from pedidos.models import Pedido
+from apps.catalogo.models import Producto, Categoria
+from apps.pedidos.models import Pedido
 
 class EventoUsuario(models.Model):
     """

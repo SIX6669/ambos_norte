@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from decimal import Decimal
 from django.db import transaction
-from .models import Pedido, ItemPedido
+from .models import Pedido, ItemPedido, HistorialEstadoPedido
 from apps.catalogo.models import Producto
 
 
@@ -104,3 +104,13 @@ class CrearPedidoSerializer(serializers.Serializer):
                 producto.save(update_fields=['stock'])
 
             return pedido
+
+
+class HistorialEstadoPedidoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistorialEstadoPedido
+        fields = [
+            'id', 'pedido', 'estado_anterior', 'estado_nuevo',
+            'usuario_modificador', 'comentario', 'fecha_cambio'
+        ]
+        read_only_fields = ['id', 'fecha_cambio']

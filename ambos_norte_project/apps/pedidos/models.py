@@ -1,7 +1,7 @@
 from django.db import models
 from django.conf import settings
-from usuarios.models import Direccion
-from catalogo.models import Producto
+from apps.usuarios.models import Direccion
+from apps.catalogo.models import Producto
 
 # Create your models here.
 class Pedido(models.Model):
@@ -27,8 +27,10 @@ class Pedido(models.Model):
     )
 
     direccion = models.ForeignKey(
-    Direccion, 
-    on_delete=models.PROTECT
+        Direccion,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True
     )
     
     email_contacto = models.EmailField()
@@ -70,10 +72,10 @@ class ItemPedido(models.Model):
         related_name='items'
     )
     producto = models.ForeignKey(
-        Producto, 
+        Producto,
         on_delete=models.PROTECT
     )
-    ## LO COMENTO POR AHORA NO ES NECESARIO YA TIENE EL ID DEL PRODUCTO nombre_producto = models.CharField(max_length=255)  # Guardar nombre por si el producto cambia
+    nombre_producto = models.CharField(max_length=255)  # Guardar nombre por si el producto cambia
     cantidad = models.IntegerField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
@@ -84,7 +86,7 @@ class ItemPedido(models.Model):
         verbose_name_plural = 'Items de Pedido'
     
     def __str__(self):
-        return f"{self.cantidad}x {self.cantidad}x {self.producto}"
+        return f"{self.cantidad}x {self.producto}"
 
 
 class HistorialEstadoPedido(models.Model):
@@ -104,6 +106,7 @@ class HistorialEstadoPedido(models.Model):
         null=True, 
         blank=True
     )
+    comentario = models.TextField(blank=True, null=True)
     fecha_cambio = models.DateTimeField(auto_now_add=True)
     
     class Meta:

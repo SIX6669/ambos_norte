@@ -7,11 +7,11 @@ from django.utils import timezone
 from datetime import timedelta, date
 from decimal import Decimal
 
-from analytics.models import MetricaDiaria, MetricaProducto, EventoUsuario, DatosGoogleAnalytics
-from pedidos.models import Pedido, ItemPedido
-from usuarios.models import Usuario
-from catalogo.models import Producto, Categoria
-from carrito.models import Carrito
+from apps.analytics.models import MetricaDiaria, MetricaProducto, EventoUsuario, DatosGoogleAnalytics
+from apps.pedidos.models import Pedido, ItemPedido
+from apps.usuarios.models import Usuario
+from apps.catalogo.models import Producto, Categoria
+from apps.carrito.models import Carrito
 
 
 @method_decorator(staff_member_required, name='dispatch')

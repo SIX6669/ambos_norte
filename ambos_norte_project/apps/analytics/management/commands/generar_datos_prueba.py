@@ -2,11 +2,11 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import timedelta, date
 import random
-from analytics.models import EventoUsuario, MetricaDiaria, MetricaProducto
-from catalogo.models import Producto, Categoria
-from usuarios.models import Usuario
-from pedidos.models import Pedido
-from carrito.models import Carrito
+from apps.analytics.models import EventoUsuario, MetricaDiaria, MetricaProducto
+from apps.catalogo.models import Producto, Categoria
+from apps.usuarios.models import Usuario
+from apps.pedidos.models import Pedido
+from apps.carrito.models import Carrito
 
 
 class Command(BaseCommand):

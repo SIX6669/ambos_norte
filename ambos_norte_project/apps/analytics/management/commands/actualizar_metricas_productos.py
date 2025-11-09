@@ -2,9 +2,9 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg
 from datetime import timedelta
-from analytics.models import MetricaProducto, EventoUsuario
-from catalogo.models import Producto
-from pedidos.models import ItemPedido
+from apps.analytics.models import MetricaProducto, EventoUsuario
+from apps.catalogo.models import Producto
+from apps.pedidos.models import ItemPedido
 
 
 class Command(BaseCommand):

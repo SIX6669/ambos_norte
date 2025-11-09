@@ -1,10 +1,10 @@
 from rest_framework import serializers
 from .models import Carrito, ItemCarrito
-from catalogo.serilizer import ProductoSerializer
+from apps.catalogo.serializers import ProductoSerializer
 
 class ItemCarritoSerializer(serializers.ModelSerializer):
     
-    producto = ProductoSerializer(read_only='True')
+    producto = ProductoSerializer(read_only=True)
     subtotal = serializers.SerializerMethodField()
 
     class Meta:

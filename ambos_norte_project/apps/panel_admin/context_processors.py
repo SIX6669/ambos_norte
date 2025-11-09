@@ -1,6 +1,6 @@
-from catalogo.models import Producto
-from pedidos.models import Pedido
-from usuarios.models import Usuario
+from apps.catalogo.models import Producto
+from apps.pedidos.models import Pedido
+from apps.usuarios.models import Usuario
 from django.utils import timezone
 from datetime import date
 

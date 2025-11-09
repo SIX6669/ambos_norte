@@ -1,9 +1,9 @@
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django.contrib.auth.signals import user_logged_in
-from carrito.models import ItemCarrito, Carrito
-from pedidos.models import Pedido
-from usuarios.models import Usuario
+from apps.carrito.models import ItemCarrito, Carrito
+from apps.pedidos.models import Pedido
+from apps.usuarios.models import Usuario
 from .models import EventoUsuario
 
 

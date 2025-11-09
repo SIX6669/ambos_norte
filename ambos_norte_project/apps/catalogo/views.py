@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.core.exceptions import ValidationError
 from .models import Categoria, Producto, ImagenProducto
 from .serilizer import CategoriaSerializar, ProductoSerializer, ImagenProductoSerializer
-from analytics.utils import AnalyticsTracker
+from apps.analytics.utils import AnalyticsTracker
 
 
 class CategoriaViewSet(viewsets.ModelViewSet):

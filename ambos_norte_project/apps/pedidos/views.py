@@ -38,7 +38,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
         # Filtros
         estado = self.request.query_params.get('estado', None)
         if estado:
-            queryset = queryset.filter(estado_pedido=estado)
+            queryset = queryset.filter(estado=estado)
         
         usuario_id = self.request.query_params.get('usuario', None)
         if usuario_id and self.request.user.is_staff:
@@ -92,10 +92,10 @@ class PedidoViewSet(viewsets.ModelViewSet):
             )
         
         # Guardar estado anterior
-        estado_anterior = pedido.estado_pedido
+        estado_anterior = pedido.estado
         
         # Actualizar pedido
-        pedido.estado_pedido = nuevo_estado
+        pedido.estado = nuevo_estado
         
         # Si el nuevo estado es "cancelado", desactivar el pedido
         if nuevo_estado == 'cancelado':
@@ -129,9 +129,9 @@ class PedidoViewSet(viewsets.ModelViewSet):
         
         # Si se está desactivando, cambiar estado a cancelado
         if pedido.activo:
-            estado_anterior = pedido.estado_pedido
+            estado_anterior = pedido.estado
             pedido.activo = False
-            pedido.estado_pedido = 'cancelado'
+            pedido.estado = 'cancelado'
             pedido.save()
             
             # Registrar en historial
@@ -146,7 +146,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
             return Response({
                 'mensaje': 'Pedido cancelado y desactivado',
                 'activo': False,
-                'estado_pedido': 'cancelado'
+                'estado': 'cancelado'
             })
         else:
             # Si se está reactivando, solo cambiar activo (mantener estado cancelado)
@@ -157,7 +157,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
             HistorialEstadoPedido.objects.create(
                 pedido=pedido,
                 estado_anterior='cancelado',
-                estado_nuevo=pedido.estado_pedido,
+                estado_nuevo=pedido.estado,
                 usuario_modificador=request.user,
                 comentario='Pedido reactivado'
             )
@@ -165,7 +165,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
             return Response({
                 'mensaje': 'Pedido reactivado',
                 'activo': True,
-                'estado_pedido': pedido.estado_pedido
+                'estado': pedido.estado
             })
     
     def destroy(self, request, *args, **kwargs):
@@ -182,11 +182,11 @@ class PedidoViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Guardar estado anterior para el historial
-        estado_anterior = pedido.estado_pedido
+        estado_anterior = pedido.estado
         
         # Desactivar el pedido y cambiar estado a cancelado
         pedido.activo = False
-        pedido.estado_pedido = 'cancelado'
+        pedido.estado = 'cancelado'
         pedido.save()
         
         # Registrar en historial
@@ -201,7 +201,7 @@ class PedidoViewSet(viewsets.ModelViewSet):
         return Response({
             'mensaje': 'Pedido cancelado y desactivado correctamente',
             'activo': False,
-            'estado_pedido': 'cancelado'
+            'estado': 'cancelado'
         }, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
@@ -215,15 +215,15 @@ class PedidoViewSet(viewsets.ModelViewSet):
         
         # Pedidos por estado (solo activos)
         por_estado = {}
-        for estado, nombre in Pedido.ESTADO_CHOICES:
-            por_estado[estado] = Pedido.objects.filter(
-                estado_pedido=estado, 
+        for estado_code, nombre in Pedido.ESTADO_CHOICES:
+            por_estado[estado_code] = Pedido.objects.filter(
+                estado=estado_code,
                 activo=True
             ).count()
         
         # Total vendido (solo pedidos activos)
         total_vendido = Pedido.objects.filter(
-            estado_pedido__in=['pagado', 'en_preparacion', 'enviado', 'entregado'],
+            estado__in=['pagado', 'en_preparacion', 'enviado', 'entregado'],
             activo=True
         ).aggregate(total=Sum('total'))['total'] or 0
         
