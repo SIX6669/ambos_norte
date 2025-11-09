@@ -1,19 +1,62 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import Usuario,Direccion
+from .models import Usuario, Direccion
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, min_length=8)
+    
     class Meta:
         model = Usuario
         fields = '__all__'
-        read_only_fields = ('fecha_registro',)  
+        read_only_fields = ('fecha_registro',)
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
+    
+    def create(self, validated_data):
+        """
+        Crea un usuario asegurándose de hashear la contraseña
+        """
+        password = validated_data.pop('password', None)
+        
+        # Crear usuario sin contraseña primero
+        user = Usuario(**validated_data)
+        
+        # Si se proporcionó contraseña, hashearla
+        if password:
+            user.set_password(password)
+        else:
+            # Si no hay contraseña, generar una aleatoria
+            user.set_unusable_password()
+        
+        user.save()
+        return user
+    
+    def update(self, instance, validated_data):
+        """
+        Actualiza un usuario asegurándose de hashear la contraseña si se proporciona
+        """
+        password = validated_data.pop('password', None)
+        
+        # Actualizar campos normales
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        # Si se proporcionó una nueva contraseña, hashearla
+        if password:
+            instance.set_password(password)
+        
+        instance.save()
+        return instance
+
 
 class DireccionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Direccion
         fields = '__all__'
-        read_only_fields = ('fecha_creacion', 'usuario')  
+        read_only_fields = ('fecha_creacion', 'usuario')
+
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
