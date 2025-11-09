@@ -76,15 +76,41 @@ export default function AdminPedidos() {
     }
   };
 
-  const handleEliminar = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este pedido?')) return;
+  const handleEliminar = async (pedido) => {
+    // Validar si ya está inactivo
+    if (!pedido.activo) {
+      alert('Este pedido ya está inactivo');
+      return;
+    }
+
+    if (!window.confirm('¿Estás seguro de cancelar y desactivar este pedido? Esta acción cambiará el estado a "Cancelado".')) return;
 
     try {
-      await ordersService.delete(id);
-      alert('Pedido eliminado correctamente');
+      await ordersService.delete(pedido.id);
+      alert('Pedido cancelado y desactivado correctamente');
       cargarPedidos();
     } catch (err) {
-      alert('Error al eliminar el pedido: ' + err.message);
+      alert('Error al desactivar el pedido: ' + err.message);
+    }
+  };
+
+  const handleToggleActivo = async (pedido) => {
+    if (pedido.activo) {
+      // Si está activo, se va a desactivar y cancelar
+      if (!window.confirm('¿Estás seguro de cancelar y desactivar este pedido?')) return;
+    }
+
+    try {
+      const response = await ordersService.toggleActivo(pedido.id);
+      if (pedido.activo) {
+        alert('Pedido cancelado y desactivado correctamente');
+      } else {
+        alert('Pedido reactivado correctamente');
+      }
+      cargarPedidos();
+    } catch (err) {
+      alert('Error al cambiar estado del pedido: ' + err.message);
+      console.error(err);
     }
   };
 
@@ -221,12 +247,13 @@ export default function AdminPedidos() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activo</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {pedidosFiltrados.map(pedido => (
-                    <tr key={pedido.id} className="hover:bg-gray-50">
+                    <tr key={pedido.id} className={`hover:bg-gray-50 ${!pedido.activo ? 'opacity-50' : ''}`}>
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">{pedido.numero_pedido}</div>
                         <div className="text-sm text-gray-500">{pedido.total_items} items</div>
@@ -253,6 +280,19 @@ export default function AdminPedidos() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleToggleActivo(pedido)}
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition ${
+                            pedido.activo 
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                          }`}
+                          title={`Click para ${pedido.activo ? 'desactivar' : 'activar'}`}
+                        >
+                          {pedido.activo ? 'Activo' : 'Inactivo'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleVerDetalle(pedido)}
@@ -265,15 +305,21 @@ export default function AdminPedidos() {
                             onClick={() => handleCambiarEstado(pedido)}
                             className="text-indigo-600 hover:text-indigo-900"
                             title="Cambiar estado"
+                            disabled={!pedido.activo}
                           >
                             <i className="fas fa-edit"></i>
                           </button>
                           <button
-                            onClick={() => handleEliminar(pedido.id)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Eliminar"
+                            onClick={() => handleEliminar(pedido)}
+                            className={`${
+                              pedido.activo 
+                                ? 'text-red-600 hover:text-red-900' 
+                                : 'text-gray-400 cursor-not-allowed'
+                            }`}
+                            title={pedido.activo ? 'Cancelar y desactivar' : 'Ya está inactivo'}
+                            disabled={!pedido.activo}
                           >
-                            <i className="fas fa-trash"></i>
+                            <i className="fas fa-ban"></i>
                           </button>
                         </div>
                       </td>
@@ -333,6 +379,14 @@ export default function AdminPedidos() {
                         estadoColors[getEstadoColor(selectedPedido.estado_pedido)]
                       }`}>
                         {getEstadoLabel(selectedPedido.estado_pedido)}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Activo</p>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        selectedPedido.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {selectedPedido.activo ? 'Sí' : 'No'}
                       </span>
                     </div>
                   </div>
@@ -406,12 +460,14 @@ export default function AdminPedidos() {
               </div>
 
               <div className="mt-6 flex gap-4">
-                <button
-                  onClick={() => handleCambiarEstado(selectedPedido)}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition"
-                >
-                  Cambiar Estado
-                </button>
+                {selectedPedido.activo && (
+                  <button
+                    onClick={() => handleCambiarEstado(selectedPedido)}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg transition"
+                  >
+                    Cambiar Estado
+                  </button>
+                )}
                 <button
                   onClick={() => setShowModal(false)}
                   className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg transition"

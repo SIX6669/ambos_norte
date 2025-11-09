@@ -27,6 +27,10 @@ class PedidoViewSet(viewsets.ModelViewSet):
             'historial'
         )
         
+        # Filtrar pedidos activos (solo admin puede ver inactivos)
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(activo=True)
+        
         # Si no es admin, solo ve sus propios pedidos
         if not self.request.user.is_staff:
             queryset = queryset.filter(usuario=self.request.user)
@@ -92,6 +96,13 @@ class PedidoViewSet(viewsets.ModelViewSet):
         
         # Actualizar pedido
         pedido.estado_pedido = nuevo_estado
+        
+        # Si el nuevo estado es "cancelado", desactivar el pedido
+        if nuevo_estado == 'cancelado':
+            pedido.activo = False
+            if not comentario:
+                comentario = 'Pedido cancelado automáticamente'
+        
         pedido.save()
         
         # Crear registro en historial
@@ -108,27 +119,118 @@ class PedidoViewSet(viewsets.ModelViewSet):
             'pedido': PedidoSerializer(pedido).data
         })
     
+    @action(detail=True, methods=['post'])
+    def toggle_activo(self, request, pk=None):
+        """
+        Alterna el estado activo de un pedido
+        POST /api/pedido/{id}/toggle_activo/
+        """
+        pedido = self.get_object()
+        
+        # Si se está desactivando, cambiar estado a cancelado
+        if pedido.activo:
+            estado_anterior = pedido.estado_pedido
+            pedido.activo = False
+            pedido.estado_pedido = 'cancelado'
+            pedido.save()
+            
+            # Registrar en historial
+            HistorialEstadoPedido.objects.create(
+                pedido=pedido,
+                estado_anterior=estado_anterior,
+                estado_nuevo='cancelado',
+                usuario_modificador=request.user,
+                comentario='Pedido cancelado y desactivado'
+            )
+            
+            return Response({
+                'mensaje': 'Pedido cancelado y desactivado',
+                'activo': False,
+                'estado_pedido': 'cancelado'
+            })
+        else:
+            # Si se está reactivando, solo cambiar activo (mantener estado cancelado)
+            pedido.activo = True
+            pedido.save()
+            
+            # Registrar en historial
+            HistorialEstadoPedido.objects.create(
+                pedido=pedido,
+                estado_anterior='cancelado',
+                estado_nuevo=pedido.estado_pedido,
+                usuario_modificador=request.user,
+                comentario='Pedido reactivado'
+            )
+            
+            return Response({
+                'mensaje': 'Pedido reactivado',
+                'activo': True,
+                'estado_pedido': pedido.estado_pedido
+            })
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribe el método destroy para desactivar en lugar de eliminar
+        DELETE /api/pedido/{id}/
+        """
+        pedido = self.get_object()
+        
+        # Si ya está inactivo, no hacer nada
+        if not pedido.activo:
+            return Response({
+                'error': 'El pedido ya está inactivo'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Guardar estado anterior para el historial
+        estado_anterior = pedido.estado_pedido
+        
+        # Desactivar el pedido y cambiar estado a cancelado
+        pedido.activo = False
+        pedido.estado_pedido = 'cancelado'
+        pedido.save()
+        
+        # Registrar en historial
+        HistorialEstadoPedido.objects.create(
+            pedido=pedido,
+            estado_anterior=estado_anterior,
+            estado_nuevo='cancelado',
+            usuario_modificador=request.user,
+            comentario='Pedido cancelado y desactivado (eliminación lógica)'
+        )
+        
+        return Response({
+            'mensaje': 'Pedido cancelado y desactivado correctamente',
+            'activo': False,
+            'estado_pedido': 'cancelado'
+        }, status=status.HTTP_200_OK)
+    
     @action(detail=False, methods=['get'])
     def estadisticas(self, request):
         """
         Obtiene estadísticas de pedidos
         GET /api/pedidos/pedido/estadisticas/
         """
-        total_pedidos = Pedido.objects.count()
+        # Solo contar pedidos activos
+        total_pedidos = Pedido.objects.filter(activo=True).count()
         
-        # Pedidos por estado
+        # Pedidos por estado (solo activos)
         por_estado = {}
         for estado, nombre in Pedido.ESTADO_CHOICES:
-            por_estado[estado] = Pedido.objects.filter(estado_pedido=estado).count()
+            por_estado[estado] = Pedido.objects.filter(
+                estado_pedido=estado, 
+                activo=True
+            ).count()
         
-        # Total vendido
+        # Total vendido (solo pedidos activos)
         total_vendido = Pedido.objects.filter(
-            estado_pedido__in=['pagado', 'en_preparacion', 'enviado', 'entregado']
+            estado_pedido__in=['pagado', 'en_preparacion', 'enviado', 'entregado'],
+            activo=True
         ).aggregate(total=Sum('total'))['total'] or 0
         
         # Pedidos recientes
         pedidos_hoy = Pedido.objects.filter(
-            fecha_pedido__date=request.query_params.get('fecha', None)
+            fecha_pedido__date=request.query_params.get('fecha', None),
+            activo=True
         ).count() if request.query_params.get('fecha') else 0
         
         return Response({

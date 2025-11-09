@@ -116,14 +116,14 @@ export default function AdminProductos() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
+    if (!window.confirm('¿Estás seguro de desactivar este producto? El producto no se eliminará, solo se marcará como inactivo.')) return;
 
     try {
       await productsService.delete(id);
-      alert('Producto eliminado correctamente');
+      alert('Producto desactivado correctamente');
       cargarDatos();
     } catch (err) {
-      alert('Error al eliminar el producto: ' + err.message);
+      alert('Error al desactivar el producto: ' + err.message);
       console.error(err);
     }
   };
@@ -139,6 +139,17 @@ export default function AdminProductos() {
       cargarDatos();
     } catch (err) {
       alert('Error al actualizar stock: ' + err.message);
+      console.error(err);
+    }
+  };
+
+  const handleToggleActivo = async (producto) => {
+    try {
+      await productsService.toggleActivo(producto.id);
+      alert(`Producto ${producto.activo ? 'desactivado' : 'activado'} correctamente`);
+      cargarDatos();
+    } catch (err) {
+      alert('Error al cambiar estado del producto: ' + err.message);
       console.error(err);
     }
   };
@@ -302,11 +313,17 @@ export default function AdminProductos() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            producto.activo ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
+                          <button
+                            onClick={() => handleToggleActivo(producto)}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer transition ${
+                              producto.activo 
+                                ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                            }`}
+                            title={`Click para ${producto.activo ? 'desactivar' : 'activar'}`}
+                          >
                             {producto.activo ? 'Activo' : 'Inactivo'}
-                          </span>
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2">
@@ -320,9 +337,9 @@ export default function AdminProductos() {
                             <button
                               onClick={() => handleDelete(producto.id)}
                               className="text-red-600 hover:text-red-900"
-                              title="Eliminar"
+                              title="Desactivar"
                             >
-                              <i className="fas fa-trash"></i>
+                              <i className="fas fa-ban"></i>
                             </button>
                           </div>
                         </td>

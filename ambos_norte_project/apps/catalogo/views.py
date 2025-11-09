@@ -208,6 +208,20 @@ class ProductoViewSet(viewsets.ModelViewSet):
             'mensaje': f'Producto {"activado" if producto.activo else "desactivado"}',
             'activo': producto.activo
         })
+    
+    def destroy(self, request, *args, **kwargs):
+        """
+        Sobrescribe el método destroy para desactivar en lugar de eliminar
+        DELETE /api/catalogo/producto/{id}/
+        """
+        producto = self.get_object()
+        producto.activo = False
+        producto.save()
+        
+        return Response({
+            'mensaje': 'Producto desactivado correctamente',
+            'activo': False
+        }, status=status.HTTP_200_OK)
 
 
 class ImagenProductoViewSet(viewsets.ModelViewSet):

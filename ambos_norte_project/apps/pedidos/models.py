@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from usuarios.models import Direccion
 from catalogo.models import Producto
+
 # Create your models here.
 class Pedido(models.Model):
     """
@@ -41,6 +42,9 @@ class Pedido(models.Model):
         default='pendiente'
     )
     notas = models.TextField(blank=True, null=True)
+    
+    # Campo para soft delete
+    activo = models.BooleanField(default=True)
     
     fecha_pedido = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
