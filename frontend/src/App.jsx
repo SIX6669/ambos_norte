@@ -21,6 +21,7 @@ import AdminVentas from "./pages/admin/AdminVentas.jsx";
 import AdminInventario from "./pages/Admin/AdminInventario.jsx";
 import AdminProductos from "./pages/admin/AdminProductos.jsx";
 import AdminPedidos from "./pages/Admin/AdminPedidos.jsx";
+import AdminUsuarios from "./pages/Admin/AdminUsuarios.jsx";
 
 function Layout() {
   const location = useLocation();
@@ -72,6 +73,12 @@ function Layout() {
             <AdminPedidos />
           </ProtectedRoute>
           } 
+        />
+        <Route path="/admin/usuarios" element={
+          <ProtectedRoute requireAdmin>
+            <AdminUsuarios />
+          </ProtectedRoute>
+          }
         />
       </Routes>
     );
