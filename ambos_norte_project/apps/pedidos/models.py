@@ -68,7 +68,7 @@ class ItemPedido(models.Model):
         Producto, 
         on_delete=models.PROTECT
     )
-    nombre_producto = models.CharField(max_length=255)  # Guardar nombre por si el producto cambia
+    ## LO COMENTO POR AHORA NO ES NECESARIO YA TIENE EL ID DEL PRODUCTO nombre_producto = models.CharField(max_length=255)  # Guardar nombre por si el producto cambia
     cantidad = models.IntegerField()
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
@@ -79,7 +79,7 @@ class ItemPedido(models.Model):
         verbose_name_plural = 'Items de Pedido'
     
     def __str__(self):
-        return f"{self.cantidad}x {self.nombre_producto}"
+        return f"{self.cantidad}x {self.cantidad}x {self.producto}"
 
 
 class HistorialEstadoPedido(models.Model):

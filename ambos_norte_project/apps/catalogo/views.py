@@ -2,23 +2,82 @@ from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.core.exceptions import ValidationError
 from .models import Categoria, Producto, ImagenProducto
 from .serilizer import CategoriaSerializar, ProductoSerializer, ImagenProductoSerializer
 from analytics.utils import AnalyticsTracker
 
+
 class CategoriaViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar categorías de productos
+    """
     queryset = Categoria.objects.all()
     serializer_class = CategoriaSerializar
+    
+    def get_permissions(self):
+        """
+        GET: Cualquiera puede ver categorías
+        POST/PUT/DELETE: Solo administradores
+        """
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated(), IsAdminUser()]
+
 
 class ProductoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar productos con analytics
+    """
     queryset = Producto.objects.all()
     serializer_class = ProductoSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra productos según los parámetros de búsqueda
+        """
+        queryset = Producto.objects.all()
+        
+        # Filtro por categoría
+        categoria = self.request.query_params.get('categoria', None)
+        if categoria:
+            queryset = queryset.filter(categoria_id=categoria)
+        
+        # Filtro por búsqueda en list
+        search = self.request.query_params.get('search', None)
+        if search:
+            queryset = queryset.filter(
+                nombre__icontains=search
+            ) | queryset.filter(
+                descripcion__icontains=search
+            )
+        
+        # Filtro por activos (solo para usuarios no admin)
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(activo=True)
+        
+        # Filtro por destacados
+        destacado = self.request.query_params.get('destacado', None)
+        if destacado:
+            queryset = queryset.filter(destacado=True)
+        
+        return queryset.select_related('categoria').prefetch_related('imagenes')
+    
+    def get_permissions(self):
+        """
+        GET: Cualquiera puede ver productos
+        POST/PUT/DELETE: Solo administradores
+        """
+        if self.action in ['list', 'retrieve', 'buscar']:
+            return [AllowAny()]
+        return [IsAuthenticated(), IsAdminUser()]
 
     def retrieve(self, request, *args, **kwargs):
         """Override para trackear vista de producto"""
         instance = self.get_object()
         
+        # Track analytics
         AnalyticsTracker.track_vista_producto(
             producto=instance,
             usuario=request.user if request.user.is_authenticated else None,
@@ -33,7 +92,7 @@ class ProductoViewSet(viewsets.ModelViewSet):
     def buscar(self, request):
         """
         Búsqueda de productos con tracking
-        GET /api/producto/buscar/?q=remera
+        GET /api/catalogo/producto/buscar/?q=remera
         """
         query = request.query_params.get('q', '')
         
@@ -66,26 +125,115 @@ class ProductoViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def reducir_stock(self, request, pk=None):
+        """
+        Reduce el stock de un producto
+        POST /api/catalogo/producto/{id}/reducir_stock/
+        Body: { "cantidad": 5 }
+        """
         producto = self.get_object()
-        cantidad = int(request.data.get('cantidad',1))
+        cantidad = int(request.data.get('cantidad', 1))
+        
+        if cantidad <= 0:
+            return Response(
+                {'error': 'La cantidad debe ser mayor a 0'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         try:
             producto.reducir_stock(cantidad)
-            return Response({'mensaje': 'Stock reducido correctamente.'})
+            return Response({
+                'mensaje': 'Stock reducido correctamente',
+                'stock_actual': producto.stock
+            })
         except ValidationError as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=True, methods=['post'])
     def aumentar_stock(self, request, pk=None):
+        """
+        Aumenta el stock de un producto
+        POST /api/catalogo/producto/{id}/aumentar_stock/
+        Body: { "cantidad": 5 }
+        """
         producto = self.get_object()
-        cantidad = int(request.data.get('cantidad',1))
+        cantidad = int(request.data.get('cantidad', 1))
+        
+        if cantidad <= 0:
+            return Response(
+                {'error': 'La cantidad debe ser mayor a 0'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         try:
             producto.aumentar_stock(cantidad)
-            return Response({'La cantidad del estock bajo'})
+            return Response({
+                'mensaje': 'Stock aumentado correctamente',
+                'stock_actual': producto.stock
+            })
         except ValidationError as e:
-            return Response({'Error por aqui': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': str(e)}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    @action(detail=True, methods=['post'])
+    def toggle_destacado(self, request, pk=None):
+        """
+        Alterna el estado destacado de un producto
+        POST /api/catalogo/producto/{id}/toggle_destacado/
+        """
+        producto = self.get_object()
+        producto.destacado = not producto.destacado
+        producto.save()
+        
+        return Response({
+            'mensaje': f'Producto {"destacado" if producto.destacado else "no destacado"}',
+            'destacado': producto.destacado
+        })
+    
+    @action(detail=True, methods=['post'])
+    def toggle_activo(self, request, pk=None):
+        """
+        Alterna el estado activo de un producto
+        POST /api/catalogo/producto/{id}/toggle_activo/
+        """
+        producto = self.get_object()
+        producto.activo = not producto.activo
+        producto.save()
+        
+        return Response({
+            'mensaje': f'Producto {"activado" if producto.activo else "desactivado"}',
+            'activo': producto.activo
+        })
 
 
 class ImagenProductoViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar imágenes adicionales de productos
+    """
     queryset = ImagenProducto.objects.all()
     serializer_class = ImagenProductoSerializer
-# Create your views here.
+    
+    def get_permissions(self):
+        """
+        GET: Cualquiera puede ver imágenes
+        POST/PUT/DELETE: Solo administradores
+        """
+        if self.action in ['list', 'retrieve']:
+            return [AllowAny()]
+        return [IsAuthenticated(), IsAdminUser()]
+    
+    def get_queryset(self):
+        """
+        Filtra imágenes por producto si se proporciona el parámetro
+        """
+        queryset = ImagenProducto.objects.all()
+        producto_id = self.request.query_params.get('producto', None)
+        
+        if producto_id:
+            queryset = queryset.filter(producto_id=producto_id)
+        
+        return queryset.order_by('orden', 'fecha_subida')
