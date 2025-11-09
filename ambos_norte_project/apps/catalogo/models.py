@@ -2,8 +2,8 @@ from django.db import models
 
 # Create your models here.
 class Categoria(models.Model):
-    nombre = models.CharField(max_length=100, unique=True)
-    descripcion = models.TimeField(blank=True, null=True)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
     activo = models.BooleanField(default=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -26,7 +26,7 @@ class Producto(models.Model):
     descripcion = models.TextField(blank=True, null=True)
     precio = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.IntegerField(default=0)
-    talla = models.CharField(max_length=20, blank=True, null=True)
+    talla = models.CharField(max_length=50, blank=True, null=True)
     color = models.CharField(max_length=50, blank=True, null=True)
     material = models.CharField(max_length=100, blank=True, null=True)
     imagen_principal = models.ImageField(upload_to='productos/', blank=True, null=True)
@@ -58,13 +58,12 @@ class ImagenProducto(models.Model):
     )
     imagen = models.ImageField(upload_to='productos/galeria/')
     orden = models.IntegerField(default=0)
-    fecha_subida = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'imagenes_producto'
         verbose_name = 'Imagen de Producto'
         verbose_name_plural = 'Imágenes de Productos'
-        ordering = ['orden', 'fecha_subida']
+        ordering = ['orden']
     
     def __str__(self):
         return f"Imagen {self.orden} - {self.producto.nombre}"

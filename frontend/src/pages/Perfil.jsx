@@ -1,285 +1,317 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { User, Lock, Package } from "lucide-react";
 
 export default function Perfil() {
-  const [usuario, setUsuario] = useState({
-    nombre: "Juan",
-    apellido: "Pérez",
-    telefono: "+54 9 372 123-456",
-    email: "sunieux@gmail.com",
-    direccion: "Avenida 123, Resistencia, Chaco",
-  });
-
+  const [usuario, setUsuario] = useState(null);
   const [seccion, setSeccion] = useState("datos");
-
-  const [pedidos, setPedidos] = useState([
-    {
-      id: "PED-1001",
-      fecha: "2025-05-18",
-      estado: "En preparación",
-      total: 4599.0,
-      metodoPago: "MercadoPago",
-      items: [
-        { id: 1, nombre: "Camisa laboral", qty: 2, precio: 1999 },
-        { id: 2, nombre: "Gorro", qty: 1, precio: 601 },
-      ],
-    },
-    {
-      id: "PED-1002",
-      fecha: "2025-04-02",
-      estado: "En camino",
-      total: 2599.0,
-      metodoPago: "Tarjeta",
-      items: [
-        { id: 1, nombre: "Pantalón", qty: 1, precio: 1599 },
-        { id: 2, nombre: "Cinta reflectiva", qty: 2, precio: 500 },
-      ],
-    },
-    {
-      id: "PED-1003",
-      fecha: "2025-02-10",
-      estado: "Entregado",
-      total: 1299.0,
-      metodoPago: "Efectivo",
-      items: [{ id: 1, nombre: "Remera", qty: 1, precio: 1299 }],
-    },
-  ]);
-
+  const [pedidos, setPedidos] = useState([]);
   const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+  const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
+
+  const rawToken = localStorage.getItem("token");
+  const token = rawToken && rawToken !== "undefined" && rawToken !== "null" ? rawToken : null;
+
+  useEffect(() => {
+    if (!token) {
+      alert("Debes iniciar sesión");
+      window.location.href = "/registro";
+      return;
+    }
+
+    fetch("http://127.0.0.1:8000/api/usuarios/perfil/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          let detail = "Error al obtener el perfil";
+          try { const err = await res.json(); detail = err.detail || err.error || JSON.stringify(err); } catch { }
+          throw new Error(detail);
+        }
+        return res.json();
+      })
+      .then((data) => setUsuario(data))
+      .catch(() => {
+        alert("Sesión inválida o expirada. Iniciá sesión nuevamente.");
+        localStorage.removeItem("token");
+        window.location.href = "/registro";
+      });
+
+    fetch("http://127.0.0.1:8000/api/pedidos/", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => setPedidos(data))
+      .catch(() => console.error("Error cargando pedidos"));
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUsuario((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleGuardar = (e) => {
+  const handleGuardar = async (e) => {
     e.preventDefault();
-    console.log("Guardando usuario:", usuario);
-    alert("Cambios guardados (simulado). Revisa la consola.");
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/usuarios/perfil/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(usuario),
+      });
+
+      if (res.ok) {
+        alert("Datos actualizados correctamente");
+      } else {
+        alert("Error al actualizar datos");
+      }
+    } catch {
+      alert("Error de conexión con el servidor");
+    }
   };
 
-  const verDetalle = (pedido) => {
-    setPedidoSeleccionado(pedido);
-    setSeccion("pedidos");
+  const handlePwdField = (e) => {
+    const { name, value } = e.target;
+    setPwd((prev) => ({ ...prev, [name]: value }));
   };
 
-  const volverLista = () => setPedidoSeleccionado(null);
+  const handleCambiarContrasena = async (e) => {
+    e.preventDefault();
+    if (!pwd.current || !pwd.next || !pwd.confirm) {
+      alert("Completa todos los campos de contrasena");
+      return;
+    }
+    if (pwd.next !== pwd.confirm) {
+      alert("La nueva contrasena y la confirmacion no coinciden");
+      return;
+    }
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/usuarios/perfil/", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ current_password: pwd.current, new_password: pwd.next }),
+      });
+      if (res.ok) {
+        alert("Contrasena actualizada correctamente");
+        setPwd({ current: "", next: "", confirm: "" });
+      } else {
+        let msg = "No se pudo actualizar la contrasena";
+        try {
+          const err = await res.json();
+          msg = err.detail || err.error || JSON.stringify(err);
+        } catch { }
+        alert(msg);
+      }
+    } catch {
+      alert("Error de conexion con el servidor");
+    }
+  };
+
+  if (!usuario)
+    return (
+      <p className="text-center text-gray-500 mt-20 text-lg">
+        Cargando perfil...
+      </p>
+    );
 
   return (
-    <div className="min-h-screen bg-white flex flex-col md:flex-row">
-      <aside className="md:w-1/4 w-full flex md:flex-col gap-3 md:gap-4 justify-center md:justify-start py-6 md:py-12">
-        <div className="bg-white shadow-lg rounded-xl p-4 w-[92%] md:w-3/4 mx-auto">
-          <ul className="flex md:flex-col justify-between md:justify-start md:gap-4 text-gray-600 text-sm font-medium">
-            <li
-              onClick={() => setSeccion("datos")}
-              className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${seccion === "datos" ? "bg-gray-100 text-black" : "hover:bg-gray-100"}`}>
-              <span>Mis datos</span>
-            </li>
-            <li
-              onClick={() => setSeccion("seguridad")}
-              className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${seccion === "seguridad" ? "bg-gray-100 text-black" : "hover:bg-gray-100"}`}>
-              <span>Seguridad</span>
-            </li>
-            <li
-              onClick={() => { setSeccion("pedidos"); setPedidoSeleccionado(null); }}
-              className={`flex items-center gap-2 p-2 rounded-md cursor-pointer ${seccion === "pedidos" ? "bg-gray-100 text-black" : "hover:bg-gray-100"}`}>
-              <span>Mis pedidos</span>
-            </li>
-          </ul>
+    <div className="h-full min-h-[calc(100vh-6rem)] md:min-h-[calc(100vh-8rem)] bg-[#F0F6F6] flex flex-col md:flex-row py-10 px-8 md:px-16 md:items-center md:justify-center">
+      <aside className="md:w-1/6 w-full md:mr-12 mb-8 md:mb-0">
+        <div className="bg-white rounded-2xl shadow-lg p-0 flex flex-col">
+          <button
+            onClick={() => setSeccion("datos")}
+            className={`flex items-center gap-3 text-sm md:text-base p-3 rounded-lg transition-all ${seccion === "datos"
+              ? "bg-[#084B83] text-white"
+              : "text-gray-600 hover:bg-gray-100"
+              }`}
+          >
+            <User size={18} />
+            Mi cuenta
+          </button>
+          <button
+            onClick={() => setSeccion("seguridad")}
+            className={`flex items-center gap-3 text-sm md:text-base p-3 rounded-lg transition-all ${seccion === "seguridad"
+              ? "bg-[#084B83] text-white"
+              : "text-gray-600 hover:bg-gray-100"
+              }`}
+          >
+            <Lock size={18} />
+            Seguridad
+          </button>
+          <button
+            onClick={() => setSeccion("pedidos")}
+            className={`flex items-center gap-3 text-sm md:text-base p-3 rounded-lg transition-all ${seccion === "pedidos"
+              ? "bg-[#084B83] text-white"
+              : "text-gray-600 hover:bg-gray-100"
+              }`}
+          >
+            <Package size={18} />
+            Mis pedidos
+          </button>
         </div>
       </aside>
-      <main className="flex-1 px-6 md:px-16 py-10">
+      <main className="flex-1 max-w-3xl">
         {seccion === "datos" && (
           <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Mi cuenta</h1>
-            <p className="text-gray-500 mb-8 text-sm md:text-base">Información personal</p>
-            <form className="flex flex-col gap-6" onSubmit={handleGuardar}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <h1 className="text-2xl md:text-4xl font-bold text-[#084B83] mb-6">
+              Datos personales
+            </h1>
+            <form onSubmit={handleGuardar} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
-                    Nombre
+                  <label className="block text-xs font-semibold mb-1">
+                    Nombre(s)
                   </label>
                   <input
-                    name="nombre"
-                    value={usuario.nombre}
-                    onChange={handleChange}
                     type="text"
+                    name="first_name"
+                    value={usuario.first_name || ""}
+                    onChange={handleChange}
                     placeholder="Ingresá tu nombre"
-                    className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
+                  <label className="block text-xs font-semibold mb-1">
                     Apellido
                   </label>
                   <input
-                    name="apellido"
-                    value={usuario.apellido}
-                    onChange={handleChange}
                     type="text"
+                    name="last_name"
+                    value={usuario.last_name || ""}
+                    onChange={handleChange}
                     placeholder="Ingresá tu apellido"
-                    className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
+                  <label className="block text-xs font-semibold mb-1">
                     Teléfono
                   </label>
                   <input
-                    name="telefono"
-                    value={usuario.telefono}
-                    onChange={handleChange}
                     type="text"
+                    name="telefono"
+                    value={usuario.telefono || ""}
+                    onChange={handleChange}
                     placeholder="Número de teléfono"
-                    className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
-                    Email
+                  <label className="block text-xs font-semibold mb-1">
+                    Correo electrónico
                   </label>
                   <input
-                    name="email"
-                    value={usuario.email}
-                    readOnly
                     type="email"
-                    className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm text-gray-500 bg-gray-50 cursor-not-allowed"
+                    name="email"
+                    value={usuario.email || ""}
+                    readOnly
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
-                  Tu dirección
-                </label>
-                <input
-                  name="direccion"
-                  value={usuario.direccion}
-                  onChange={handleChange}
-                  type="text"
-                  placeholder="Avenida 123, Resistencia, Chaco"
-                  className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
-              </div>
-              <button type="submit" className="mt-6 w-fit bg-black text-white px-8 py-3 rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform duration-200">
-                GUARDAR CAMBIOS
+              <button type="submit" className="w-full md:max-w-fit uppercase bg-[#084B83] text-white px-8 py-3 rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform duration-200">
+                Guardar
               </button>
             </form>
           </>
         )}
         {seccion === "seguridad" && (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Seguridad</h1>
-            <p className="text-gray-500 mb-6 text-sm md:text-base">
-              Actualizá tu contraseña para mantener tu cuenta segura.
-            </p>
-            <form className="flex flex-col gap-6 max-w-md" onSubmit={(e) => { e.preventDefault(); alert("Cambio de contraseña simulado"); }}>
+          <div className="max-w-3xl">
+            <h1 className="text-2xl md:text-4xl font-bold text-[#084B83] mb-6">
+              Cambiá tu contraseña
+            </h1>
+            <form onSubmit={handleCambiarContrasena} className="space-y-6">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
+                <label className="block text-xs font-semibold mb-1">
                   Contraseña actual
                 </label>
                 <input
                   type="password"
-                  placeholder="********"
-                  className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  name="current"
+                  value={pwd.current}
+                  onChange={handlePwdField}
+                  className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  placeholder="Ingresá tu contraseña actual"
+                  required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 mb-2 uppercase">
-                  Nueva contraseña
-                </label>
-                <input
-                  type="password"
-                  placeholder="********"
-                  className="w-full border border-gray-200 rounded-md px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1">
+                    Nueva contraseña
+                  </label>
+                  <input
+                    type="password"
+                    name="next"
+                    value={pwd.next}
+                    onChange={handlePwdField}
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    placeholder="Mínimo 8 caracteres"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1">
+                    Confirmar contraseña
+                  </label>
+                  <input
+                    type="password"
+                    name="confirm"
+                    value={pwd.confirm}
+                    onChange={handlePwdField}
+                    className="w-full border border-gray-200 rounded-lg px-4 py-3 text-sm"
+                    placeholder="Repetí la nueva contraseña"
+                    required
+                  />
+                </div>
               </div>
-              <button
-                type="submit"
-                className="mt-4 w-fit bg-black text-white px-8 py-3 rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform duration-200"
-              >
-                CAMBIAR CONTRASEÑA
+              <button type="submit" className="w-full md:max-w-fit uppercase bg-[#084B83] text-white px-8 py-3 rounded-full font-semibold text-sm hover:scale-[1.02] transition-transform duration-200">
+                Cambiar
               </button>
             </form>
-          </>
+          </div>
         )}
         {seccion === "pedidos" && (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Mis pedidos</h1>
-            <p className="text-gray-500 mb-6 text-sm md:text-base">
-              Revisá el estado de tus pedidos y los detalles de cada compra.
-            </p>
-            {pedidoSeleccionado ? (
-              <div className="max-w-3xl bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="font-semibold text-lg">{pedidoSeleccionado.id}</h2>
-                    <p className="text-sm text-gray-500">{pedidoSeleccionado.fecha} • {pedidoSeleccionado.estado}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Método</p>
-                    <p className="font-medium">{pedidoSeleccionado.metodoPago}</p>
-                  </div>
-                </div>
-                <div className="border-t border-b border-gray-100 py-4 my-4">
-                  <h3 className="text-sm font-semibold mb-2">Items</h3>
-                  <ul className="space-y-3">
-                    {pedidoSeleccionado.items.map((it) => (
-                      <li key={it.id} className="flex justify-between">
-                        <div>
-                          <p className="font-medium">{it.nombre}</p>
-                          <p className="text-xs text-gray-500">Cantidad: {it.qty}</p>
-                        </div>
-                        <div className="font-semibold">${it.precio.toFixed(2)}</div>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Total</p>
-                    <p className="text-xl font-bold">${pedidoSeleccionado.total.toFixed(2)}</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={volverLista}
-                      className="px-4 py-2 rounded-full bg-gray-100 text-sm hover:bg-gray-200"
-                    >
-                      Volver
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="grid gap-4">
-                {pedidos.map((p) => (
-                  <div key={p.id} className="flex flex-col md:flex-row items-start md:items-center justify-between border border-gray-200 rounded-lg p-4">
-                    <div className="flex-1">
-                      <div className="flex items-start md:items-center justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold">{p.id}</h3>
-                          <p className="text-sm text-gray-500">{p.fecha} • {p.items.length} item(s) • {p.estado}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2 mt-4 md:mt-0 md:ml-4">
-                      <button
-                        onClick={() => verDetalle(p)}
-                        className="px-4 py-2 rounded-full bg-black text-white text-sm hover:opacity-90"
-                      >
-                        Ver detalle
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {pedidos.length === 0 && (
-                  <div className="border border-gray-200 rounded-lg p-6 text-center text-gray-500">
-                    No tenés pedidos todavía.
-                  </div>
-                )}
-              </div>
-            )}
-          </>
+          <div className="w-full">
+            <h1 className="text-2xl md:text-4xl font-bold text-[#084B83] mb-6">
+              Mis pedidos
+            </h1>
+            <div className="bg-white rounded-2xl shadow-lg overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50 text-gray-600">
+                  <tr>
+                    <th className="text-left font-semibold px-6 py-3">Pedido ID</th>
+                    <th className="text-left font-semibold px-6 py-3">Fecha</th>
+                    <th className="text-left font-semibold px-6 py-3">Estado</th>
+                    <th className="text-left font-semibold px-6 py-3">Total pagado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pedidos.length === 0 ? (
+                    <tr>
+                      <td className="px-6 py-6 text-gray-500" colSpan={4}>No tenes pedidos aun.</td>
+                    </tr>
+                  ) : (
+                    pedidos.map((p) => (
+                      <tr key={p.id} className="border-t">
+                        <td className="px-6 py-4">#{p.id}</td>
+                        <td className="px-6 py-4">{p.fecha_creacion ? new Date(p.fecha_creacion).toLocaleDateString() : "-"}</td>
+                        <td className="px-6 py-4"><span className="inline-block rounded-full bg-gray-100 px-3 py-1 text-xs">{p.estado || "En proceso"}</span></td>
+                        <td className="px-6 py-4">${p.total ?? p.total_pagado ?? 0}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         )}
       </main>
     </div>

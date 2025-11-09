@@ -1,5 +1,6 @@
 from django.db import models
-from pedidos.models import Pedido
+from apps.pedidos.models import Pedido
+from apps.usuarios.models import Direccion
 # Create your models here.
 class Envio(models.Model):
     """
@@ -13,12 +14,12 @@ class Envio(models.Model):
         ('devuelto', 'Devuelto'),
     ]
     
-    pedido = models.OneToOneField(
+    pedido = models.ForeignKey(
         Pedido, 
         on_delete=models.CASCADE, 
-        related_name='envio'
+        related_name='envios'
     )
-    metodo_envio = models.CharField(max_length=100, blank=True, null=True)
+    numero_envio = models.CharField(max_length=100, blank=True, null=True)
     numero_seguimiento = models.CharField(max_length=100, blank=True, null=True)
     empresa_envio = models.CharField(max_length=100, blank=True, null=True)
     
@@ -30,9 +31,7 @@ class Envio(models.Model):
     
     fecha_envio = models.DateTimeField(blank=True, null=True)
     fecha_entrega_estimada = models.DateField(blank=True, null=True)
-    fecha_entrega_real = models.DateTimeField(blank=True, null=True)
-    
-    notas = models.TextField(blank=True, null=True)
+    direccion = models.ForeignKey(Direccion, on_delete=models.PROTECT, null=True, blank=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
     

@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from catalogo.models import Producto
+from apps.catalogo.models import Producto
 # Create your models here.
 class Carrito(models.Model):
     """
@@ -16,7 +16,6 @@ class Carrito(models.Model):
     session_id = models.CharField(max_length=255, blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
-    activo = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'carritos'
@@ -30,7 +29,7 @@ class Carrito(models.Model):
     
     def calcular_subtotal(self):
         """Calcula el subtotal del carrito"""
-        return sum(item.subtotal() for item in self.items.all())
+        return sum(item.subtotal for item in self.items.all())
     
     def total_items(self):
         """Cuenta total de items en el carrito"""
@@ -52,17 +51,15 @@ class ItemCarrito(models.Model):
     )
     cantidad = models.IntegerField(default=1)
     precio_unitario = models.DecimalField(max_digits=10, decimal_places=2)
-    fecha_agregado = models.DateTimeField(auto_now_add=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
     
     class Meta:
         db_table = 'items_carrito'
         verbose_name = 'Item de Carrito'
         verbose_name_plural = 'Items de Carrito'
-        unique_together = ['carrito', 'producto']  # No duplicar productos
+        # El esquema de BD no impone unicidad compuesta
     
     def __str__(self):
         return f"{self.cantidad}x {self.producto.nombre}"
     
-    def subtotal(self):
-        """Calcula el subtotal del item"""
-        return self.cantidad * self.precio_unitario
+    # El subtotal es persistido en BD

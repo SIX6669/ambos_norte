@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from catalogo.models import Producto
+from apps.catalogo.models import Producto
 # Create your models here.
 class ChatbotConversacion(models.Model):
     """
@@ -16,7 +16,6 @@ class ChatbotConversacion(models.Model):
     )
     fecha_inicio = models.DateTimeField(auto_now_add=True)
     fecha_fin = models.DateTimeField(blank=True, null=True)
-    activa = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'chatbot_conversaciones'
@@ -44,13 +43,14 @@ class ChatbotMensaje(models.Model):
         on_delete=models.CASCADE, 
         related_name='mensajes'
     )
-    tipo_mensaje = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    tipo_mensaje = models.CharField(max_length=100, choices=TIPO_CHOICES)
     contenido = models.TextField()
-    producto_mencionado = models.ForeignKey(
+    producto_relacionado = models.ForeignKey(
         Producto, 
         on_delete=models.SET_NULL, 
         null=True, 
-        blank=True
+        blank=True,
+        db_column='producto_relacionado_id'
     )
     fecha_mensaje = models.DateTimeField(auto_now_add=True)
     
