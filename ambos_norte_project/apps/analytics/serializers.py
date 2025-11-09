@@ -6,8 +6,8 @@ from .models import (
     ConfiguracionGoogleAnalytics,
     DatosGoogleAnalytics
 )
-from catalogo.serilizer import ProductoSerializer, CategoriaSerializar
-from usuarios.serializer import UsuarioSerializer
+from apps.catalogo.serializers import ProductoSerializer, CategoriaSerializer as CategoriaSerializar
+from apps.usuarios.serializer import UsuarioSerializer
 
 
 class EventoUsuarioSerializer(serializers.ModelSerializer):
