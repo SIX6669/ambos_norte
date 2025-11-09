@@ -13,7 +13,7 @@ class HistorialEstadoInline(admin.TabularInline):
 
 @admin.register(Pedido)
 class PedidoAdmin(admin.ModelAdmin):
-    list_display = ['numero_pedido', 'usuario', 'estado_pedido', 'total', 'fecha_pedido']
-    list_filter = ['estado_pedido', 'fecha_pedido']
+    list_display = ['numero_pedido', 'usuario', 'estado', 'total', 'fecha_pedido']
+    list_filter = ['estado', 'fecha_pedido']
     search_fields = ['numero_pedido', 'usuario__username', 'email_contacto']
     inlines = [ItemPedidoInline, HistorialEstadoInline]

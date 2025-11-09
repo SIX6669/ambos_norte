@@ -17,7 +17,7 @@ class Pedido(models.Model):
         ('cancelado', 'Cancelado'),
     ]
     
-    numero_pedido = models.CharField(max_length=50, unique=True)
+    numero_pedido = models.CharField(max_length=50)
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.SET_NULL, 
@@ -25,18 +25,19 @@ class Pedido(models.Model):
         blank=True,
         related_name='pedidos'
     )
+
     direccion = models.ForeignKey(
-        Direccion, 
-        on_delete=models.PROTECT
+    Direccion, 
+    on_delete=models.PROTECT
     )
+    
     email_contacto = models.EmailField()
-    telefono_contacto = models.CharField(max_length=20)
+    telefono_contacto = models.CharField(max_length=50)
     
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
-    costo_envio = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total = models.DecimalField(max_digits=10, decimal_places=2)
     
-    estado_pedido = models.CharField(
+    estado = models.CharField(
         max_length=20, 
         choices=ESTADO_CHOICES, 
         default='pendiente'
@@ -103,7 +104,6 @@ class HistorialEstadoPedido(models.Model):
         null=True, 
         blank=True
     )
-    comentario = models.TextField(blank=True, null=True)
     fecha_cambio = models.DateTimeField(auto_now_add=True)
     
     class Meta:

@@ -92,7 +92,7 @@ function Layout() {
           <Route path="/" element={<Landing />} />
           <Route path="/registro" element={<Registro />} />
           <Route path="/catalogo" element={<Catalogo />} />
-          <Route path="/producto" element={<Producto />} />
+          <Route path="/producto/:id" element={<Producto />} />
           <Route path="/carrito" element={<Carrito />} />
           <Route path="/enviopago" element={<EnvioPago />} />
           <Route path="/compra-exitosa" element={<CompraExitosa />} />

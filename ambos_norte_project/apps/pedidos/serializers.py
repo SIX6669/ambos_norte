@@ -1,78 +1,106 @@
 from rest_framework import serializers
-from .models import Pedido, ItemPedido, HistorialEstadoPedido
+from decimal import Decimal
+from django.db import transaction
+from .models import Pedido, ItemPedido
+from apps.catalogo.models import Producto
 
 
 class ItemPedidoSerializer(serializers.ModelSerializer):
-    """Serializer para items de pedido"""
-    nombre_producto = serializers.CharField(source='producto.nombre', read_only=True)
-    
     class Meta:
         model = ItemPedido
-        fields = '__all__'
-
-
-class HistorialEstadoPedidoSerializer(serializers.ModelSerializer):
-    """Serializer para historial con info del usuario"""
-    usuario_nombre = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = HistorialEstadoPedido
-        fields = '__all__'
-        read_only_fields = ('fecha_cambio',)
-    
-    def get_usuario_nombre(self, obj):
-        if obj.usuario_modificador:
-            if obj.usuario_modificador.first_name:
-                return f"{obj.usuario_modificador.first_name} {obj.usuario_modificador.last_name}".strip()
-            return obj.usuario_modificador.username
-        return "Sistema"
+        fields = [
+            'id', 'producto', 'nombre_producto', 'cantidad',
+            'precio_unitario', 'subtotal'
+        ]
+        read_only_fields = ['id', 'nombre_producto', 'subtotal']
 
 
 class PedidoSerializer(serializers.ModelSerializer):
-    """Serializer completo para pedidos"""
     items = ItemPedidoSerializer(many=True, read_only=True)
-    usuario_nombre = serializers.SerializerMethodField()
-    usuario_email = serializers.SerializerMethodField()
-    estado_display = serializers.CharField(source='get_estado_pedido_display', read_only=True)
-    total_items = serializers.SerializerMethodField()
-    direccion_info = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = Pedido
-        fields = '__all__'
-        read_only_fields = ('numero_pedido', 'fecha_pedido', 'fecha_actualizacion')
-    
-    def get_usuario_nombre(self, obj):
-        if obj.usuario:
-            if obj.usuario.first_name:
-                return f"{obj.usuario.first_name} {obj.usuario.last_name}".strip()
-            return obj.usuario.username
-        return "Cliente Invitado"
-    
-    def get_usuario_email(self, obj):
-        if obj.usuario:
-            return obj.usuario.email
-        return obj.email_contacto
-    
-    def get_total_items(self, obj):
-        try:
-            return obj.items.count()
-        except:
-            return 0
-    
-    def get_direccion_info(self, obj):
-        """
-        Devuelve la información de la dirección
-        ✅ Solo con los campos que EXISTEN en el modelo Direccion
-        """
-        if obj.direccion:
-            return {
-                'id': obj.direccion.id,
-                'calle': obj.direccion.calle,
-                'numero': obj.direccion.numero,
-                'piso_depto': obj.direccion.piso_depto,
-                'ciudad': obj.direccion.ciudad,
-                'provincia': obj.direccion.provincia,
-                'codigo_postal': obj.direccion.codigo_postal,
-            }
-        return None
+        fields = [
+            'id', 'numero_pedido', 'usuario', 'email_contacto', 'telefono_contacto',
+            'subtotal', 'total', 'estado', 'notas', 'fecha_pedido', 'items'
+        ]
+        read_only_fields = [
+            'id', 'numero_pedido', 'usuario', 'subtotal', 'total', 'estado',
+            'fecha_pedido', 'items'
+        ]
+
+
+class CrearItemInputSerializer(serializers.Serializer):
+    producto_id = serializers.IntegerField()
+    cantidad = serializers.IntegerField(min_value=1)
+    precio_unitario = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class CrearPedidoSerializer(serializers.Serializer):
+    items = CrearItemInputSerializer(many=True)
+    contacto = serializers.DictField(child=serializers.CharField(), required=False)
+    notas = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2, required=False)
+    envio = serializers.DictField(required=False)
+
+    def validate(self, attrs):
+        if not attrs.get('items'):
+            raise serializers.ValidationError('items es requerido')
+        return attrs
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user if request.user and request.user.is_authenticated else None
+        items_data = validated_data['items']
+        contacto = validated_data.get('contacto') or {}
+        notas = validated_data.get('notas') or ''
+        envio = validated_data.get('envio') or {}
+
+        with transaction.atomic():
+            detalles_items = [] 
+            subtotal = Decimal('0.00')
+            for it in items_data:
+                try:
+                    producto = Producto.objects.select_for_update().get(id=it['producto_id'])
+                except Producto.DoesNotExist:
+                    raise serializers.ValidationError({'items': [f"Producto con id {it['producto_id']} no existe"]})
+                cantidad = int(it['cantidad'])
+                if cantidad <= 0:
+                    raise serializers.ValidationError({'items': [f"Cantidad inválida para producto {producto.id}"]})
+                if producto.stock < cantidad:
+                    raise serializers.ValidationError({'items': [f"Stock insuficiente para '{producto.nombre}'. Disponible: {producto.stock}"]})
+
+                precio_unitario = Decimal(str(producto.precio))
+                sub = Decimal(cantidad) * precio_unitario
+                detalles_items.append((producto, cantidad, precio_unitario, sub))
+                subtotal += sub
+
+            envio_costo = Decimal(str(envio.get('costo') or 0))
+            total = subtotal + envio_costo
+
+            from datetime import datetime
+            numero_pedido = datetime.utcnow().strftime('PN%Y%m%d%H%M%S')
+
+            pedido = Pedido.objects.create(
+                numero_pedido=numero_pedido,
+                usuario=user,
+                email_contacto=contacto.get('email') or (user.email if user else ''),
+                telefono_contacto=contacto.get('telefono') or '',
+                subtotal=subtotal,
+                total=total,
+                notas=notas,
+            )
+
+            for producto, cantidad, precio_unitario, sub in detalles_items:
+                ItemPedido.objects.create(
+                    pedido=pedido,
+                    producto=producto,
+                    nombre_producto=producto.nombre,
+                    cantidad=cantidad,
+                    precio_unitario=precio_unitario,
+                    subtotal=sub,
+                )
+                producto.stock = producto.stock - cantidad
+                producto.save(update_fields=['stock'])
+
+            return pedido

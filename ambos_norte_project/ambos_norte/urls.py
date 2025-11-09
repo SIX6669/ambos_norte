@@ -17,22 +17,8 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('dashboard/', include('panel_admin.urls')),
-    path('api/', include('carrito.urls')),
-    path('api/', include('catalogo.urls')),
-    path('api/', include('chatbot.urls')),
-    path('api/', include('envios.urls')),
-    path('api/', include('pagos.urls')),
-    path('api/', include('pedidos.urls')),
-    path('api/', include('usuarios.urls')),
-    path('api/auth/', include('usuarios.auth_urls')),
-    path('api/analytics/', include('analytics.urls'))
 ]
-
-# Servir archivos media en desarrollo
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

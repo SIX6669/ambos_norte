@@ -8,7 +8,7 @@ class ChatbotMensajeInline(admin.TabularInline):
 
 @admin.register(ChatbotConversacion)
 class ChatbotConversacionAdmin(admin.ModelAdmin):
-    list_display = ['id', 'usuario', 'session_id', 'activa', 'fecha_inicio']
-    list_filter = ['activa']
+    list_display = ['id', 'usuario', 'session_id', 'fecha_inicio']
+    list_filter = []
     search_fields = ['usuario__username', 'session_id']
     inlines = [ChatbotMensajeInline]
