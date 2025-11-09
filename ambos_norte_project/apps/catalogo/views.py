@@ -62,6 +62,16 @@ class ProductoViewSet(viewsets.ModelViewSet):
         if destacado:
             queryset = queryset.filter(destacado=True)
         
+        # Filtro por stock máximo (para listar productos con poco stock)
+        stock_max = self.request.query_params.get('stock_max', None)
+        if stock_max is not None:
+            try:
+                stock_max_int = int(stock_max)
+                queryset = queryset.filter(stock__lte=stock_max_int)
+            except (TypeError, ValueError):
+                # Si el parámetro no es válido, se ignora el filtro
+                pass
+
         return queryset.select_related('categoria').prefetch_related('imagenes')
     
     def get_permissions(self):

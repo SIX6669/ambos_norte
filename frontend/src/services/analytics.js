@@ -90,6 +90,11 @@ const analyticsService = {
     return response.data;
   },
 
+  // Alias para compatibilidad: embudo de conversión
+  getEmbudoConversion: async (dias = 30) => {
+    return analyticsService.getConversionFunnel(dias);
+  },
+
   // ==================== TRACKING HELPERS ====================
   
   // Track vista de producto

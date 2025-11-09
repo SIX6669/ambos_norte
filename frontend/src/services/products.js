@@ -82,6 +82,12 @@ const productsService = {
   toggleActivo: async (id) => {
     const response = await api.post(`/producto/${id}/toggle_activo/`);
     return response.data;
+  },
+
+  // Productos con poco stock (para panel admin)
+  getLowStockProducts: async (umbral = 10) => {
+    const response = await api.get('/producto/', { params: { stock_max: umbral } });
+    return response.data;
   }
 };
 
